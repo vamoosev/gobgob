@@ -1,8 +1,15 @@
 from scapy.all import *
 
-def packet_handler(pkt):
-    if pkt.haslayer(Dot11):
-        if pkt.type == 0 and pkt.subtype == 4:
-            print("Probe Request:", pkt.addr2)
+# sniff packets and put to pcap file
+def sniff_packets():
+    pkts = sniff(iface="wlan0mon")
+    print(pkts)
+    wrpcap("sniffed.pcap", pkts)
 
-sniff(iface="wlan0", prn=packet_handler)
+
+
+def main():
+    sniff_packets()
+
+if __name__ == "__main__":
+    main()
