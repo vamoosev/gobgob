@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
+dotenv = "0.15.0"
 env_logger = "0.10.0"
-pcap-file = "2.0.0-rc1"
+sqlx = { version = "0.6", features = [ "runtime-actix-rustls", "sqlite", "macros", "migrate"] }
