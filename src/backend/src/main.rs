@@ -1,6 +1,6 @@
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer, http::ConnectionType};
+use rusqlite::{Connection, Result};
 
-use sqlite::{self, Connection};
 use dotenv::dotenv;
 
 // ? should we use this or db?
@@ -25,17 +25,41 @@ use std::sync::Arc;
 #[actix_web::post("/supersalainen/json")]
 async fn postjuttu(db: web::Data<Arc<Mutex<Connection>>>, body: String) -> std::io::Result<HttpResponse> {
     let db = db.lock().await;
+    // turhaa kikkailua, mutta en keksinyt miten saada rusqlite::Connection
+    // toimimaan ilman clonea
+    // HACK: onko tämä turhaa kikkailua?
+    //
+    // make body into json    
+    let json: serde_json::Value = serde_json::from_str(&body).unwrap();
+    let mac = json["mac"].as_str().unwrap();
+    let date = json["date"].as_str().unwrap();
+    let computer = json["computer"].as_str().unwrap();
+    db.execute(
+        "INSERT INTO test (mac, date, computer) VALUES (?1, ?2, ?3)",
+        [mac, date, computer],
+    ).unwrap();
+
     Ok(HttpResponse::Ok().body(body))
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // create db connection
+
+    let db = Arc::new(Mutex::new(Connection::open("test.db").unwrap()));
+    db.lock().await.execute(
+        "CREATE TABLE IF NOT EXISTS mac-addresses (
+                mac TEXT NOT NULL,
+                date TEXT NOT NULL,
+                computer TEXT NOT NULL,
+            )",
+        (),
+    ).unwrap();
+    let db = db.clone();
+
     dotenv().ok();
 
     // pass db to app
-    let db = sqlite::open("./db.db").unwrap();
-    db.execute("CREATE TABLE IF NOT EXISTS juttu (juttu TEXT)").unwrap();
-    let db = Arc::new(Mutex::new(db));
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
     HttpServer::new(move || {
         App::new()
