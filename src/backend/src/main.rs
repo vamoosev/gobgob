@@ -18,7 +18,6 @@ use dotenv::dotenv;
 //     // Return a success response
 //     Ok(HttpResponse::Ok().body(body))
 // }
-
 use tokio::sync::Mutex;
 use std::sync::Arc;
 
@@ -35,7 +34,7 @@ async fn postjuttu(db: web::Data<Arc<Mutex<Connection>>>, body: String) -> std::
     let date = json["date"].as_str().unwrap();
     let computer = json["computer"].as_str().unwrap();
     db.execute(
-        "INSERT INTO test (mac, date, computer) VALUES (?1, ?2, ?3)",
+        "INSERT INTO macs (mac, date, computer) VALUES (?1, ?2, ?3)",
         [mac, date, computer],
     ).unwrap();
 
@@ -48,15 +47,14 @@ async fn main() -> std::io::Result<()> {
 
     let db = Arc::new(Mutex::new(Connection::open("test.db").unwrap()));
     db.lock().await.execute(
-        "CREATE TABLE IF NOT EXISTS mac-addresses (
+        "CREATE TABLE IF NOT EXISTS macs (
                 mac TEXT NOT NULL,
                 date TEXT NOT NULL,
-                computer TEXT NOT NULL,
+                computer TEXT NOT NULL
             )",
         (),
     ).unwrap();
-    let db = db.clone();
-
+    
     dotenv().ok();
 
     // pass db to app
